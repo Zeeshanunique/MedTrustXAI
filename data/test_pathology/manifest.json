@@ -1,0 +1,61 @@
+{
+  "modality": "pathology",
+  "samples": [
+    {
+      "id": "path_001_seminoma",
+      "filename": "path_001_seminoma.png",
+      "path": "data/test_pathology/images/path_001_seminoma.png",
+      "modality": "pathology",
+      "category": "malignant",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Classical seminoma H&E",
+      "vqa_questions": [
+        "Describe the tumor cell morphology.",
+        "Are there features of malignancy?"
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "path_002_renal_carcinoma",
+      "filename": "path_002_renal_carcinoma.jpg",
+      "path": "data/test_pathology/images/path_002_renal_carcinoma.jpg",
+      "modality": "pathology",
+      "category": "malignant",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Clear cell renal cell carcinoma grade 1",
+      "vqa_questions": [
+        "What malignant features are visible?",
+        "Describe the nuclear morphology."
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "path_003_ductal_carcinoma",
+      "filename": "path_003_ductal_carcinoma.jpg",
+      "path": "data/test_pathology/images/path_003_ductal_carcinoma.jpg",
+      "modality": "pathology",
+      "category": "metastatic",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Lymph node metastasis from breast ductal carcinoma",
+      "vqa_questions": [
+        "Is there evidence of metastatic carcinoma?",
+        "Describe the stromal and epithelial features."
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "path_004_hepatic_amyloid",
+      "filename": "path_004_hepatic_amyloid.jpg",
+      "path": "data/test_pathology/images/path_004_hepatic_amyloid.jpg",
+      "modality": "pathology",
+      "category": "deposition",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Hepatic amyloidosis H&E",
+      "vqa_questions": [
+        "What extracellular deposits are visible?",
+        "Describe the tissue architecture."
+      ],
+      "license": "CC0 / Public Domain"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "samples": [
+    {
+      "id": "cxr_001_normal_pa",
+      "filename": "cxr_001_normal_pa.jpg",
+      "path": "data/test_cxr/images/cxr_001_normal_pa.jpg",
+      "category": "normal",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Normal PA chest radiograph",
+      "vqa_questions": [
+        "Are the lungs normal appearing?",
+        "Is there any focal consolidation?"
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "cxr_002_lobar_pneumonia",
+      "filename": "cxr_002_lobar_pneumonia.jpg",
+      "path": "data/test_cxr/images/cxr_002_lobar_pneumonia.jpg",
+      "category": "pneumonia",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Lobar pneumonia, right middle lobe",
+      "vqa_questions": [
+        "What abnormality is present in this image?",
+        "Is there pneumonia?"
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "cxr_003_pneumonia_ap",
+      "filename": "cxr_003_pneumonia_ap.jpg",
+      "path": "data/test_cxr/images/cxr_003_pneumonia_ap.jpg",
+      "category": "pneumonia",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Pneumonia with right upper lobe opacity (CDC PHIL)",
+      "vqa_questions": [
+        "Is there increased opacity in the lungs?",
+        "Which lobe shows abnormality?"
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "cxr_004_normal",
+      "filename": "cxr_004_normal.png",
+      "path": "data/test_cxr/images/cxr_004_normal.png",
+      "category": "normal",
+      "source": "Wikimedia Commons",
+      "reference_hint": "Normal heart and lungs",
+      "vqa_questions": [
+        "Are the lungs normal appearing?",
+        "Is the heart size normal?"
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "cxr_005_normal_pa",
+      "filename": "cxr_005_normal_pa.png",
+      "path": "data/test_cxr/images/cxr_005_normal_pa.png",
+      "category": "normal",
+      "source": "Wikimedia Commons",
+      "reference_hint": "PA chest radiograph",
+      "vqa_questions": [
+        "Describe the key findings in this chest X-ray."
+      ],
+      "license": "CC0 / Public Domain"
+    },
+    {
+      "id": "cxr_vqa_001",
+      "filename": "cxr_vqa_001.jpg",
+      "category": "vqa_rad",
+      "source": "abhay2812/vqa-rad",
+      "reference_hint": "yes",
+      "vqa_questions": [
+        "Is there evidence of an aortic aneurysm?"
+      ],
+      "license": "VQA-RAD (research use; cite original paper)"
+    },
+    {
+      "id": "cxr_vqa_002",
+      "filename": "cxr_vqa_002.jpg",
+      "category": "vqa_rad",
+      "source": "abhay2812/vqa-rad",
+      "reference_hint": "Yes",
+      "vqa_questions": [
+        "Is there airspace consolidation on the left side?"
+      ],
+      "license": "VQA-RAD (research use; cite original paper)"
+    },
+    {
+      "id": "cxr_vqa_003",
+      "filename": "cxr_vqa_003.jpg",
+      "category": "vqa_rad",
+      "source": "abhay2812/vqa-rad",
+      "reference_hint": "Yes",
+      "vqa_questions": [
+        "Are >12 ribs present in the image?"
+      ],
+      "license": "VQA-RAD (research use; cite original paper)"
+    }
+  ]
+}

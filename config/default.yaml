@@ -1,0 +1,37 @@
+model:
+  local_id: BIOMEDICA/BMC-smolvlm1-256M
+  processor_id: HuggingFaceTB/SmolVLM-256M-Instruct
+  max_new_tokens: 128
+
+modalities:
+  radiology:
+    label: Radiology (Chest X-ray)
+    system_prompt: >
+      You are an expert radiologist assistant. Provide findings, a concise diagnosis,
+      and a brief explanation grounded in visible image evidence. Research use only.
+    report_prompt: >
+      Analyze this chest X-ray. Provide: (1) key findings, (2) likely diagnosis,
+      (3) brief explanation of visual evidence.
+    default_manifest: data/test_cxr/manifest.json
+    example_dir: data/test_cxr/images
+
+  pathology:
+    label: Digital Pathology (H&E)
+    system_prompt: >
+      You are an expert pathologist assistant. Describe tissue morphology, cell patterns,
+      and likely diagnosis grounded in visible H&E evidence. Research use only.
+    report_prompt: >
+      Analyze this histopathology image. Provide: (1) tissue architecture and cellular
+      features, (2) likely diagnosis or differential, (3) explanation of visual evidence.
+    default_manifest: data/test_pathology/manifest.json
+    example_dir: data/test_pathology/images
+
+xai:
+  output_dir: outputs/xai
+  alpha: 0.45
+  fast: true
+
+paths:
+  outputs: outputs
+
+disclaimer: Research and educational use only. Not for clinical diagnosis.

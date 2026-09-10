@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medtrustxai"
+version = "0.1.0"
+description = "Explainable multi-modal medical imaging for trustworthy AI-assisted diagnosis in radiology and digital pathology"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.50.0",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "opencv-python-headless>=4.9.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "torchvision>=0.16.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "ruff>=0.3.0"]
+ui = ["gradio>=5.0.0"]
+datasets = ["datasets>=2.18.0"]
+
+[project.scripts]
+medtrustxai = "medtrustxai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
