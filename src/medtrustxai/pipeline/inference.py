@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 from medtrustxai.config import Config
+from medtrustxai.data.wsi_tiling import ImagePatch, extract_patches, select_center_patch
 from medtrustxai.evaluation.faithfulness import evaluate_grounding
 from medtrustxai.modalities import Modality, normalize_modality
 from medtrustxai.models.smolvlm import SmolVLMLocalModel
@@ -23,6 +24,8 @@ class DiagnosticOutput:
     prompt: str
     gradcam_path: str | None = None
     faithfulness: dict | None = None
+    patch_bbox: tuple[int, int, int, int] | None = None
+    num_patches: int | None = None
 
 
 class DiagnosticPipeline:
@@ -44,6 +47,22 @@ class DiagnosticPipeline:
 
     def default_prompt(self) -> str:
         return str(self.modality_cfg.get("report_prompt", ""))
+
+    def prepare_pathology_image(
+        self,
+        image: Image.Image,
+        tile_mode: str = "center",
+        patch_size: int = 512,
+        stride: int | None = None,
+    ) -> tuple[Image.Image, ImagePatch | None, int]:
+        if tile_mode == "none":
+            return image, None, 1
+        if tile_mode == "grid":
+            patches = extract_patches(image, patch_size=patch_size, stride=stride)
+            center = patches[len(patches) // 2]
+            return center.image, center, len(patches)
+        patch = select_center_patch(image, patch_size=patch_size)
+        return patch.image, patch, 1
 
     def run(
         self,
@@ -78,6 +97,32 @@ class DiagnosticPipeline:
         output.faithfulness = asdict(
             evaluate_grounding(result.text, gradcam.heatmap, modality=self.modality)
         )
+        return output
+
+    def run_pathology_wsi(
+        self,
+        image: Image.Image,
+        prompt: str,
+        sample_id: str = "sample",
+        run_xai: bool = True,
+        max_new_tokens: int | None = None,
+        tile_mode: str = "center",
+        patch_size: int = 512,
+        stride: int | None = None,
+    ) -> DiagnosticOutput:
+        patch_image, patch, num_patches = self.prepare_pathology_image(
+            image, tile_mode=tile_mode, patch_size=patch_size, stride=stride
+        )
+        output = self.run(
+            image=patch_image,
+            prompt=prompt,
+            sample_id=sample_id,
+            run_xai=run_xai,
+            max_new_tokens=max_new_tokens,
+        )
+        if patch is not None:
+            output.patch_bbox = patch.bbox
+        output.num_patches = num_patches
         return output
 
     def save_result(self, output: DiagnosticOutput, path: Path) -> None:

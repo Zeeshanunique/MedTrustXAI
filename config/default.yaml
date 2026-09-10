@@ -26,6 +26,12 @@ modalities:
     default_manifest: data/test_pathology/manifest.json
     example_dir: data/test_pathology/images
 
+pathology:
+  wsi:
+    default_tile_mode: center
+    patch_size: 512
+    stride: 512
+
 xai:
   output_dir: outputs/xai
   alpha: 0.45

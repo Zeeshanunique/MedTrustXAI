@@ -8,6 +8,7 @@ from PIL import Image
 
 from medtrustxai.config import Config
 from medtrustxai.data.test_dataset import TestDataset
+from medtrustxai.evaluation.metrics import evaluate_results, save_evaluation
 from medtrustxai.modalities import MODALITIES, normalize_modality
 from medtrustxai.pipeline.inference import DiagnosticPipeline
 
@@ -26,6 +27,14 @@ def build_parser() -> argparse.ArgumentParser:
     infer.add_argument("--sample-id", default="demo")
     infer.add_argument("--no-xai", action="store_true")
     infer.add_argument("--max-tokens", type=int, default=None)
+    infer.add_argument(
+        "--tile-mode",
+        choices=["none", "center", "grid"],
+        default="center",
+        help="Pathology WSI tiling: center patch or grid preview",
+    )
+    infer.add_argument("--patch-size", type=int, default=512)
+    infer.add_argument("--stride", type=int, default=None)
 
     batch = sub.add_parser("batch", help="Run inference on a test dataset manifest")
     batch.add_argument("--modality", choices=MODALITIES, default="radiology")
@@ -34,12 +43,53 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--no-xai", action="store_true")
     batch.add_argument("--max-tokens", type=int, default=None)
     batch.add_argument("--limit", type=int, default=None)
+    batch.add_argument("--tile-mode", choices=["none", "center", "grid"], default="center")
+    batch.add_argument("--patch-size", type=int, default=512)
+    batch.add_argument("--stride", type=int, default=None)
+
+    evaluate = sub.add_parser("evaluate", help="Compute VQA/report metrics from saved results")
+    evaluate.add_argument("--modality", choices=MODALITIES, default="radiology")
+    evaluate.add_argument("--manifest", default=None)
+    evaluate.add_argument("--results-dir", default="outputs")
+    evaluate.add_argument("--output", default=None, help="JSON summary path")
 
     serve = sub.add_parser("serve", help="Launch Gradio web UI")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=7860)
     serve.add_argument("--share", action="store_true")
     return parser
+
+
+def _run_sample(
+    pipeline: DiagnosticPipeline,
+    image: Image.Image,
+    prompt: str,
+    sample_id: str,
+    modality: str,
+    run_xai: bool,
+    max_tokens: int | None,
+    tile_mode: str,
+    patch_size: int,
+    stride: int | None,
+):
+    if modality == "pathology" and tile_mode != "none":
+        return pipeline.run_pathology_wsi(
+            image=image,
+            prompt=prompt,
+            sample_id=sample_id,
+            run_xai=run_xai,
+            max_new_tokens=max_tokens,
+            tile_mode=tile_mode,
+            patch_size=patch_size,
+            stride=stride,
+        )
+    return pipeline.run(
+        image=image,
+        prompt=prompt,
+        sample_id=sample_id,
+        run_xai=run_xai,
+        max_new_tokens=max_tokens,
+    )
 
 
 def main() -> None:
@@ -52,16 +102,23 @@ def main() -> None:
         image = Image.open(args.image).convert("RGB")
         pipeline = DiagnosticPipeline(config, modality=modality)
         prompt = args.prompt or pipeline.default_prompt()
-        output = pipeline.run(
-            image=image,
-            prompt=prompt,
-            sample_id=args.sample_id,
-            run_xai=not args.no_xai,
-            max_new_tokens=args.max_tokens,
+        output = _run_sample(
+            pipeline,
+            image,
+            prompt,
+            args.sample_id,
+            modality,
+            not args.no_xai,
+            args.max_tokens,
+            args.tile_mode,
+            args.patch_size,
+            args.stride,
         )
         out_path = Path(config.output_dir) / f"{args.sample_id}_{modality}_result.json"
         pipeline.save_result(output, out_path)
         print(output.findings)
+        if output.patch_bbox:
+            print(f"Patch bbox: {output.patch_bbox} (from {output.num_patches} patch(es))")
         if output.faithfulness:
             print(f"Faithfulness: {output.faithfulness['faithfulness_score']:.3f}")
         print(f"Saved: {out_path}")
@@ -86,18 +143,38 @@ def main() -> None:
             prompt = default_prompt
             if args.prompt is None and sample.vqa_questions:
                 prompt = sample.vqa_questions[0]
-            output = pipeline.run(
-                image=image,
-                prompt=prompt,
-                sample_id=sample.id,
-                run_xai=not args.no_xai,
-                max_new_tokens=args.max_tokens,
+            output = _run_sample(
+                pipeline,
+                image,
+                prompt,
+                sample.id,
+                modality,
+                not args.no_xai,
+                args.max_tokens,
+                args.tile_mode,
+                args.patch_size,
+                args.stride,
             )
             out_path = Path(config.output_dir) / f"{sample.id}_{modality}_result.json"
             pipeline.save_result(output, out_path)
             print(f"[{sample.id}] {sample.category} — {sample.reference_hint}")
             print(output.findings[:200] + ("…" if len(output.findings) > 200 else ""))
             print(f"  saved: {out_path}\n")
+
+    elif args.command == "evaluate":
+        modality = normalize_modality(args.modality)
+        modality_cfg = config.modality_config(modality)
+        manifest = args.manifest or modality_cfg.get("default_manifest")
+        summary = evaluate_results(manifest, args.results_dir, modality)
+        out = Path(args.output or config.output_dir) / f"evaluation_{modality}.json"
+        save_evaluation(summary, out)
+        print(f"Modality: {modality}")
+        print(f"Samples evaluated: {summary.num_samples}")
+        print(f"Mean VQA match: {summary.mean_vqa_match:.3f}")
+        print(f"Mean token F1: {summary.mean_token_f1:.3f}")
+        if summary.mean_faithfulness is not None:
+            print(f"Mean faithfulness: {summary.mean_faithfulness:.3f}")
+        print(f"Saved: {out}")
 
     elif args.command == "serve":
         from medtrustxai.app.gradio_app import launch

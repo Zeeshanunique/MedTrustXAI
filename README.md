@@ -34,8 +34,23 @@ medtrustxai batch --modality pathology
 
 # Web UI (modality selector)
 medtrustxai serve --port 7860
+
+# Pathology WSI tiling (large slide -> center patch)
+medtrustxai infer --modality pathology --image slide.png --tile-mode center --patch-size 512
+
+# Quantitative evaluation (after batch)
+medtrustxai evaluate --modality radiology
+medtrustxai evaluate --modality pathology
+
+# Regenerate project PDF
+pip install fpdf2
+python scripts/generate_project_pdf.py
 ```
 
 ## Config
 
-`config/default.yaml` — per-modality prompts, XAI settings, manifest paths.
+`config/default.yaml` — per-modality prompts, WSI tiling, XAI settings, manifest paths.
+
+## Documentation
+
+`docs/MedTrustXAI_Project_Documentation.pdf` — academic project report.
