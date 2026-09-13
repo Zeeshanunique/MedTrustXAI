@@ -2,6 +2,7 @@ model:
   local_id: BIOMEDICA/BMC-smolvlm1-256M
   processor_id: HuggingFaceTB/SmolVLM-256M-Instruct
   max_new_tokens: 128
+  classification_max_tokens: 48
 
 modalities:
   radiology:
@@ -9,9 +10,19 @@ modalities:
     system_prompt: >
       You are an expert radiologist assistant. Provide findings, a concise diagnosis,
       and a brief explanation grounded in visible image evidence. Research use only.
+    classifier_system_prompt: >
+      You are a chest X-ray classification assistant. Follow the label format exactly.
+      Research use only.
     report_prompt: >
       Analyze this chest X-ray. Provide: (1) key findings, (2) likely diagnosis,
       (3) brief explanation of visual evidence.
+    cxr_binary_prompt: >
+      Is pneumonia or focal airspace consolidation present on this chest X-ray?
+      Answer with exactly one word: yes or no.
+    vqa_prompt: >
+      Look at this chest X-ray and answer the question using only visible evidence.
+      Reply with exactly one word: yes or no.
+      Question: {question}
     default_manifest: data/test_cxr/manifest.json
     example_dir: data/test_cxr/images
 
@@ -20,9 +31,15 @@ modalities:
     system_prompt: >
       You are an expert pathologist assistant. Describe tissue morphology, cell patterns,
       and likely diagnosis grounded in visible H&E evidence. Research use only.
+    classifier_system_prompt: >
+      You are a histopathology classification assistant. Follow the label format exactly.
+      Research use only.
     report_prompt: >
       Analyze this histopathology image. Provide: (1) tissue architecture and cellular
       features, (2) likely diagnosis or differential, (3) explanation of visual evidence.
+    pathology_prompt: >
+      What is the best diagnosis category for this H&E histopathology image?
+      Reply with exactly one word from: malignant, metastatic, deposition, benign.
     default_manifest: data/test_pathology/manifest.json
     example_dir: data/test_pathology/images
 

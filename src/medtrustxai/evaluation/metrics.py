@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from medtrustxai.data.test_dataset import TestDataset
+from medtrustxai.evaluation.confusion_matrix import classify_from_record
 
 
 @dataclass
@@ -18,6 +19,7 @@ class SampleMetrics:
     vqa_match: float
     token_f1: float
     faithfulness: float | None = None
+    classification_correct: float | None = None
 
 
 @dataclass
@@ -27,6 +29,7 @@ class EvaluationSummary:
     mean_vqa_match: float
     mean_token_f1: float
     mean_faithfulness: float | None
+    mean_classification_accuracy: float | None
     samples: list[SampleMetrics]
 
 
@@ -92,6 +95,7 @@ def evaluate_results(
         prediction = record.get("findings", "")
         reference = sample.reference_hint
         faith = record.get("faithfulness") or {}
+        cls_row = classify_from_record(sample, record)
         rows.append(
             SampleMetrics(
                 sample_id=sample.id,
@@ -102,6 +106,7 @@ def evaluate_results(
                 vqa_match=vqa_match(prediction, reference),
                 token_f1=token_f1(prediction, reference),
                 faithfulness=faith.get("faithfulness_score"),
+                classification_correct=1.0 if cls_row.correct else 0.0,
             )
         )
 
@@ -112,16 +117,19 @@ def evaluate_results(
             mean_vqa_match=0.0,
             mean_token_f1=0.0,
             mean_faithfulness=None,
+            mean_classification_accuracy=None,
             samples=[],
         )
 
     faith_vals = [r.faithfulness for r in rows if r.faithfulness is not None]
+    cls_vals = [r.classification_correct for r in rows if r.classification_correct is not None]
     return EvaluationSummary(
         modality=modality,
         num_samples=len(rows),
         mean_vqa_match=sum(r.vqa_match for r in rows) / len(rows),
         mean_token_f1=sum(r.token_f1 for r in rows) / len(rows),
         mean_faithfulness=(sum(faith_vals) / len(faith_vals)) if faith_vals else None,
+        mean_classification_accuracy=(sum(cls_vals) / len(cls_vals)) if cls_vals else None,
         samples=rows,
     )
 
@@ -134,6 +142,7 @@ def save_evaluation(summary: EvaluationSummary, path: Path) -> None:
         "mean_vqa_match": summary.mean_vqa_match,
         "mean_token_f1": summary.mean_token_f1,
         "mean_faithfulness": summary.mean_faithfulness,
+        "mean_classification_accuracy": summary.mean_classification_accuracy,
         "samples": [asdict(s) for s in summary.samples],
     }
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

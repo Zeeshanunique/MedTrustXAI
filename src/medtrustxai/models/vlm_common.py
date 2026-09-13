@@ -95,7 +95,12 @@ def generate_from_messages(
     device: torch.device,
     dtype: torch.dtype | None = None,
     max_new_tokens: int = 128,
+    do_sample: bool = False,
 ) -> str:
     inputs, input_len = _encode(processor, messages, device, dtype)
-    generated = model.generate(**inputs, max_new_tokens=max_new_tokens)
+    generated = model.generate(
+        **inputs,
+        max_new_tokens=max_new_tokens,
+        do_sample=do_sample,
+    )
     return processor.decode(generated[0][input_len:], skip_special_tokens=True).strip()

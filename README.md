@@ -28,9 +28,13 @@ medtrustxai infer --modality radiology --image data/test_cxr/images/cxr_001_norm
 # Digital pathology
 medtrustxai infer --modality pathology --image data/test_pathology/images/path_001_normal_mucosa.jpg
 
-# Batch (per-modality manifest)
-medtrustxai batch --modality radiology
-medtrustxai batch --modality pathology
+# Tuned classification batch (recommended for test-set accuracy)
+medtrustxai batch --modality radiology --mode classification --no-xai
+medtrustxai batch --modality pathology --mode classification --no-xai
+
+# Confusion matrix + metrics
+medtrustxai evaluate --modality radiology
+medtrustxai evaluate --modality pathology
 
 # Web UI (modality selector)
 medtrustxai serve --port 7860

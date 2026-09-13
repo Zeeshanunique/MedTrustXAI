@@ -8,6 +8,11 @@ from PIL import Image
 
 from medtrustxai.config import Config
 from medtrustxai.data.test_dataset import TestDataset
+from medtrustxai.evaluation.confusion_matrix import (
+    compute_confusion_matrix,
+    plot_confusion_matrix,
+    save_confusion_matrix_json,
+)
 from medtrustxai.evaluation.metrics import evaluate_results, save_evaluation
 from medtrustxai.modalities import MODALITIES, normalize_modality
 from medtrustxai.pipeline.inference import DiagnosticPipeline
@@ -46,8 +51,14 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--tile-mode", choices=["none", "center", "grid"], default="center")
     batch.add_argument("--patch-size", type=int, default=512)
     batch.add_argument("--stride", type=int, default=None)
+    batch.add_argument(
+        "--mode",
+        choices=["classification", "report"],
+        default="classification",
+        help="classification: tuned labels for accuracy/confusion matrix; report: free-text",
+    )
 
-    evaluate = sub.add_parser("evaluate", help="Compute VQA/report metrics from saved results")
+    evaluate = sub.add_parser("evaluate", help="Compute metrics and confusion matrix from results")
     evaluate.add_argument("--modality", choices=MODALITIES, default="radiology")
     evaluate.add_argument("--manifest", default=None)
     evaluate.add_argument("--results-dir", default="outputs")
@@ -140,24 +151,38 @@ def main() -> None:
 
         for sample in samples:
             image = dataset.load_image(sample)
-            prompt = default_prompt
-            if args.prompt is None and sample.vqa_questions:
-                prompt = sample.vqa_questions[0]
-            output = _run_sample(
-                pipeline,
-                image,
-                prompt,
-                sample.id,
-                modality,
-                not args.no_xai,
-                args.max_tokens,
-                args.tile_mode,
-                args.patch_size,
-                args.stride,
-            )
+            if args.mode == "classification":
+                output = pipeline.run_classification(
+                    sample=sample,
+                    image=image,
+                    run_xai=not args.no_xai,
+                    max_new_tokens=args.max_tokens,
+                    tile_mode=args.tile_mode,
+                    patch_size=args.patch_size,
+                    stride=args.stride,
+                )
+            else:
+                prompt = default_prompt
+                if args.prompt is None and sample.vqa_questions:
+                    prompt = sample.vqa_questions[0]
+                output = _run_sample(
+                    pipeline,
+                    image,
+                    prompt,
+                    sample.id,
+                    modality,
+                    not args.no_xai,
+                    args.max_tokens,
+                    args.tile_mode,
+                    args.patch_size,
+                    args.stride,
+                )
             out_path = Path(config.output_dir) / f"{sample.id}_{modality}_result.json"
             pipeline.save_result(output, out_path)
             print(f"[{sample.id}] {sample.category} — {sample.reference_hint}")
+            if output.predicted_label and output.true_label:
+                mark = "OK" if output.predicted_label == output.true_label else "MISS"
+                print(f"  label: {output.true_label} -> {output.predicted_label} [{mark}]")
             print(output.findings[:200] + ("…" if len(output.findings) > 200 else ""))
             print(f"  saved: {out_path}\n")
 
@@ -174,7 +199,24 @@ def main() -> None:
         print(f"Mean token F1: {summary.mean_token_f1:.3f}")
         if summary.mean_faithfulness is not None:
             print(f"Mean faithfulness: {summary.mean_faithfulness:.3f}")
+        if summary.mean_classification_accuracy is not None:
+            print(f"Classification accuracy: {summary.mean_classification_accuracy:.3f}")
         print(f"Saved: {out}")
+
+        cm_results = compute_confusion_matrix(manifest, args.results_dir, modality)
+        if cm_results:
+            cm_json = Path(config.output_dir) / f"confusion_matrix_{modality}.json"
+            save_confusion_matrix_json(cm_results, cm_json)
+            for cm in cm_results:
+                png = Path(config.output_dir) / f"confusion_matrix_{modality}_{cm.task}.png"
+                plot_confusion_matrix(cm, png)
+                print(f"\n{cm.task}: accuracy={cm.accuracy:.2%} ({len(cm.rows)} samples)")
+                for label, recall in cm.per_class_recall.items():
+                    print(f"  recall[{label}]: {recall:.2%}")
+                print(f"  matrix PNG: {png}")
+            print(f"Confusion matrix JSON: {cm_json}")
+        else:
+            print("No result files found for confusion matrix. Run: medtrustxai batch --modality", modality)
 
     elif args.command == "serve":
         from medtrustxai.app.gradio_app import launch

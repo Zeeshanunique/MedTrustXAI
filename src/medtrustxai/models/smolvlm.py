@@ -65,13 +65,19 @@ class SmolVLMLocalModel:
         )
 
     @torch.inference_mode()
-    def generate(self, image: Image.Image, prompt: str, max_new_tokens: int = 128) -> GenerationResult:
+    def generate(
+        self,
+        image: Image.Image,
+        prompt: str,
+        max_new_tokens: int = 128,
+        system_prompt: str | None = None,
+    ) -> GenerationResult:
         print("Generating response...", file=sys.stderr)
         t0 = time.perf_counter()
         text = generate_from_messages(
             self.processor,
             self.model,
-            build_messages(self.system_prompt, image, prompt),
+            build_messages(system_prompt or self.system_prompt, image, prompt),
             self.device,
             self.dtype,
             max_new_tokens,

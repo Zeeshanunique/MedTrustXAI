@@ -16,12 +16,14 @@ dependencies = [
     "pyyaml>=6.0",
     "python-dotenv>=1.0.0",
     "torchvision>=0.16.0",
+    "matplotlib>=3.8.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0", "ruff>=0.3.0", "fpdf2>=2.7.0"]
 ui = ["gradio>=5.0.0"]
 datasets = ["datasets>=2.18.0"]
+rad = ["torchxrayvision>=1.2.0", "scikit-image>=0.22.0"]
 
 [project.scripts]
 medtrustxai = "medtrustxai.cli:main"
