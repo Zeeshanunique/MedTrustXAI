@@ -33,9 +33,48 @@ PATHOLOGY_REGIONS = {
     "lumen": (0.25, 0.25, 0.75, 0.75),
 }
 
+MRI_REGIONS = {
+    "brain": (0.10, 0.10, 0.90, 0.90),
+    "cortex": (0.15, 0.15, 0.85, 0.85),
+    "ventricles": (0.35, 0.35, 0.65, 0.65),
+    "white matter": (0.20, 0.20, 0.80, 0.80),
+    "lesion": (0.25, 0.25, 0.75, 0.75),
+}
+
+CBC_REGIONS = {
+    "wbc": (0.05, 0.05, 0.95, 0.30),
+    "rbc": (0.05, 0.30, 0.95, 0.60),
+    "hemoglobin": (0.05, 0.20, 0.95, 0.50),
+    "platelets": (0.05, 0.60, 0.95, 0.90),
+}
+
+BLOOD_TESTS_REGIONS = {
+    "glucose": (0.05, 0.05, 0.95, 0.25),
+    "kidney function": (0.05, 0.25, 0.95, 0.50),
+    "liver panel": (0.05, 0.50, 0.95, 0.75),
+    "electrolytes": (0.05, 0.75, 0.95, 0.95),
+}
+
+PULSE_OXIMETRY_REGIONS = {
+    "plethysmogram": (0.05, 0.05, 0.95, 0.60),
+    "spo2": (0.05, 0.60, 0.95, 0.95),
+    "pulse rate": (0.50, 0.60, 0.95, 0.95),
+}
+
+FLU_TESTING_REGIONS = {
+    "control line": (0.10, 0.10, 0.90, 0.40),
+    "test line": (0.10, 0.40, 0.90, 0.70),
+    "antigen band": (0.10, 0.30, 0.90, 0.70),
+}
+
 REGION_MAP: dict[Modality, dict[str, tuple[float, float, float, float]]] = {
     "radiology": RADIOLOGY_REGIONS,
     "pathology": PATHOLOGY_REGIONS,
+    "mri": MRI_REGIONS,
+    "cbc": CBC_REGIONS,
+    "blood_tests": BLOOD_TESTS_REGIONS,
+    "pulse_oximetry": PULSE_OXIMETRY_REGIONS,
+    "flu_testing": FLU_TESTING_REGIONS,
 }
 
 
@@ -79,7 +118,7 @@ def evaluate_grounding(
     heatmap: np.ndarray,
     modality: Modality = "radiology",
 ) -> GroundingResult:
-    regions = REGION_MAP[modality]
+    regions = REGION_MAP.get(modality, RADIOLOGY_REGIONS)
     mentioned = _extract_terms(explanation, regions)
     predicted = _region_from_heatmap(heatmap, regions)
 
@@ -96,6 +135,7 @@ def evaluate_grounding(
         predicted_region=predicted,
         faithfulness_score=score,
     )
+
 
 
 def _extract_pathology_keywords(text: str) -> list[str]:

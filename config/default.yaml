@@ -43,6 +43,47 @@ modalities:
     default_manifest: data/test_pathology/manifest.json
     example_dir: data/test_pathology/images
 
+  mri:
+    label: Magnetic Resonance Imaging (MRI)
+    system_prompt: >
+      You are an expert neuroradiologist & MRI specialist assistant. Analyze brain, spine,
+      or tissue MRI scans for intensity abnormalities, lesions, structural alignment, and pathology. Research use only.
+    report_prompt: >
+      Analyze this MRI scan. Provide: (1) key anatomical & signal intensity findings,
+      (2) differential diagnosis, (3) visual evidence summary.
+
+  cbc:
+    label: Complete Blood Count (CBC)
+    system_prompt: >
+      You are an expert hematology assistant. Analyze CBC lab result reports, white blood cell, red blood cell, hemoglobin, hematocrit, and platelet parameters. Research use only.
+    report_prompt: >
+      Analyze this CBC blood report image. Provide: (1) key abnormal parameters (WBC, RBC, Hgb, Plt),
+      (2) clinical interpretation (e.g. anemia, leukocytosis), (3) summary of findings.
+
+  blood_tests:
+    label: Comprehensive Blood Tests & Metabolic Panels
+    system_prompt: >
+      You are a clinical laboratory diagnostics assistant. Analyze blood chemistry panels, metabolic markers, lipid panels, and biomarker reports. Research use only.
+    report_prompt: >
+      Analyze this blood test panel report. Provide: (1) identified out-of-range biomarkers,
+      (2) clinical significance, (3) diagnostic recommendations.
+
+  pulse_oximetry:
+    label: Pulse Oximetry (SpO2 & Waveform)
+    system_prompt: >
+      You are a critical care diagnostics assistant. Analyze pulse oximeter readings, SpO2 percentages, pulse rate, and plethysmogram waveforms. Research use only.
+    report_prompt: >
+      Analyze this pulse oximetry reading or waveform. Provide: (1) SpO2 level & oxygenation status,
+      (2) pulse rate assessment, (3) clinical risk observation.
+
+  flu_testing:
+    label: Rapid Flu & Respiratory Testing
+    system_prompt: >
+      You are an infectious disease diagnostic assistant. Analyze rapid influenza swab test cassettes, antigen bands, and diagnostic test strips. Research use only.
+    report_prompt: >
+      Analyze this rapid flu test image. Provide: (1) control band status,
+      (2) Flu A / Flu B test band interpretation (positive/negative/invalid), (3) clinical summary.
+
 pathology:
   wsi:
     default_tile_mode: center
@@ -58,3 +99,4 @@ paths:
   outputs: outputs
 
 disclaimer: Research and educational use only. Not for clinical diagnosis.
+

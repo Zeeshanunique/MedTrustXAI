@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import gc
+import os
 import sys
 import time
 from typing import Any
+
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2"
+
 
 import torch
 from PIL import Image
@@ -23,7 +30,30 @@ PROCESSOR_FOR_MODEL = {
 }
 
 
+
+_MODEL_CACHE: dict[tuple[str, str], SmolVLMLocalModel] = {}
+
+
+def get_shared_smolvlm_model(
+    model_id: str = "BIOMEDICA/BMC-smolvlm1-256M",
+    processor_id: str | None = None,
+    system_prompt: str | None = None,
+) -> SmolVLMLocalModel:
+    proc = processor_id or PROCESSOR_FOR_MODEL.get(model_id, "HuggingFaceTB/SmolVLM-256M-Instruct")
+    key = (model_id, proc)
+    if key not in _MODEL_CACHE:
+        _MODEL_CACHE[key] = SmolVLMLocalModel(
+            model_id=model_id,
+            processor_id=proc,
+            system_prompt=system_prompt,
+        )
+    elif system_prompt:
+        _MODEL_CACHE[key].system_prompt = system_prompt
+    return _MODEL_CACHE[key]
+
+
 def _resolve_device() -> tuple[torch.device, torch.dtype]:
+
     if torch.cuda.is_available():
         return torch.device("cuda"), torch.bfloat16
     if torch.backends.mps.is_available():
@@ -48,10 +78,12 @@ class SmolVLMLocalModel:
 
         print(f"Loading SmolVLM: {model_id} on {self._device}", file=sys.stderr)
         t0 = time.perf_counter()
+        gc.collect()
         self.processor = AutoProcessor.from_pretrained(proc)
         self.model = AutoModelForImageTextToText.from_pretrained(
             model_id, dtype=self.dtype, low_cpu_mem_usage=True
         ).to(self._device)
+
         self.model.eval()
         print(f"Model ready in {time.perf_counter() - t0:.1f}s", file=sys.stderr)
 
