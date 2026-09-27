@@ -36,9 +36,40 @@ PROMPT_PRESETS = {
         "VQA — inflammation": "Is there evidence of inflammatory infiltrate?",
         "Custom question": "",
     },
+    "mri": {
+        "Full report": "Analyze this MRI scan. Provide: (1) anatomical findings & signal intensity, (2) differential diagnosis, (3) visual summary.",
+        "Brain MRI scan": "Examine this brain MRI for lesions, mass effect, ventricular size, and signal intensity changes.",
+        "Spine MRI scan": "Analyze this spine MRI for disc height, spinal cord compression, and vertebral alignment.",
+        "Custom question": "",
+    },
+    "cbc": {
+        "Full report": "Analyze this CBC blood report. Provide key parameter levels (WBC, RBC, Hgb, Plt) and clinical interpretation.",
+        "Anemia evaluation": "Check hemoglobin, hematocrit, and RBC indices for signs of anemia.",
+        "Infection/WBC check": "Evaluate white blood cell count and differential for leukocytosis or infection indicators.",
+        "Custom question": "",
+    },
+    "blood_tests": {
+        "Full report": "Analyze this blood test panel report. List out-of-range biomarkers and clinical significance.",
+        "Metabolic panel": "Analyze glucose, electrolytes, kidney (BUN/Cr), and liver markers in this blood panel.",
+        "Lipid panel": "Evaluate cholesterol, triglycerides, HDL, and LDL levels.",
+        "Custom question": "",
+    },
+    "pulse_oximetry": {
+        "Full report": "Analyze this pulse oximetry reading or plethysmogram waveform for SpO2 percentage, pulse rate, and perfusion.",
+        "SpO2 check": "Is the oxygen saturation (SpO2) level normal (>=95%) or indicative of hypoxia?",
+        "Waveform analysis": "Evaluate the plethysmographic waveform for regular pulsatile contour and signal quality.",
+        "Custom question": "",
+    },
+    "flu_testing": {
+        "Full report": "Analyze this rapid flu antigen test strip/cassette. Interpret Control (C), Flu A, and Flu B bands.",
+        "Flu A / B result": "Is the test positive for Influenza A, Influenza B, or negative?",
+        "Control band validation": "Is the control (C) line clearly visible to validate the test run?",
+        "Custom question": "",
+    },
 }
 
 _pipelines: dict[str, DiagnosticPipeline] = {}
+
 
 
 def _get_pipeline(config_path: str, modality: str) -> DiagnosticPipeline:
@@ -91,11 +122,21 @@ def _example_paths(config: Config, modality: str) -> list[str]:
     ]
 
 
+def _empty_response(status_msg: str) -> tuple:
+    return (
+        [],
+        None,
+        "",
+        "",
+        status_msg,
+        _faithfulness(None),
+    )
+
+
 def analyze(image, modality, preset, custom_prompt, run_xai, max_tokens, config_path):
-    empty = [], "", "", _faithfulness(None)
     pil = _to_pil(image)
     if pil is None:
-        return empty + ("Waiting for image…",)
+        return _empty_response("Waiting for image…")
 
     mod = normalize_modality(modality)
     presets = PROMPT_PRESETS[mod]
@@ -103,7 +144,7 @@ def analyze(image, modality, preset, custom_prompt, run_xai, max_tokens, config_
     if preset == "Custom question":
         prompt = (custom_prompt or "").strip()
         if not prompt:
-            return empty + ("Enter a custom question.",)
+            return _empty_response("Enter a custom question.")
 
     t0 = time.perf_counter()
     try:
@@ -115,7 +156,7 @@ def analyze(image, modality, preset, custom_prompt, run_xai, max_tokens, config_
             max_new_tokens=int(max_tokens),
         )
     except Exception as exc:
-        return empty + (f"Error ({time.perf_counter() - t0:.1f}s): {exc}",)
+        return _empty_response(f"Error ({time.perf_counter() - t0:.1f}s): {exc}")
 
     gradcam = Image.open(out.gradcam_path).convert("RGB") if out.gradcam_path else None
     return (
@@ -241,14 +282,10 @@ def build_app(config_path: str = "config/default.yaml") -> gr.Blocks:
             outputs=[chatbot, chat_input],
         )
 
-        def _preload():
-            for m in MODALITIES:
-                _get_pipeline(config_path, m)
-            return f"Ready · {config.model_id}"
-
-        demo.load(_preload, outputs=status)
+        status.value = f"Ready · {config.model_id}"
 
     return demo
+
 
 
 def launch(
@@ -257,4 +294,12 @@ def launch(
     server_port: int = 7860,
     share: bool = False,
 ):
-    build_app(config_path).launch(server_name=server_name, server_port=server_port, share=share)
+    app = build_app(config_path)
+    for p in range(server_port, server_port + 20):
+        try:
+            app.launch(server_name=server_name, server_port=p, share=share)
+            break
+        except OSError:
+            if p == server_port + 19:
+                raise
+

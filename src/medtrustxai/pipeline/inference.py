@@ -25,7 +25,7 @@ from medtrustxai.evaluation.prompts import (
 )
 from medtrustxai.modalities import Modality, normalize_modality
 from medtrustxai.models.cxr_classifier import predict_cxr_category
-from medtrustxai.models.smolvlm import SmolVLMLocalModel
+from medtrustxai.models.smolvlm import SmolVLMLocalModel, get_shared_smolvlm_model
 from medtrustxai.xai.gradcam import GradCAMExplainer
 from medtrustxai.xai.visualization import save_attribution
 
@@ -53,11 +53,12 @@ class DiagnosticPipeline:
         self.modality_cfg = config.modality_config(self.modality)
         config.ensure_dirs()
 
-        self.model = SmolVLMLocalModel(
+        self.model = get_shared_smolvlm_model(
             model_id=config.model_id,
             processor_id=config.get("model", "processor_id"),
             system_prompt=self.modality_cfg.get("system_prompt"),
         )
+
         self.gradcam = GradCAMExplainer(
             self.model,
             prefer_fast=bool(config.get("xai", "fast", default=True)),
